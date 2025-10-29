@@ -1,0 +1,45 @@
+# Application Core
+fastapi
+uvicorn
+python-multipart
+watchfiles
+websockets
+httptools
+
+# Database
+sqlalchemy
+psycopg2-binary
+alembic
+
+# Supabase SDK
+supabase
+postgrest
+gotrue
+realtime
+storage3
+supafunc
+
+# Auth & Security
+python-jose
+passlib[bcrypt]
+python-dotenv
+pydantic-settings
+
+# Data validation
+pydantic
+email-validator
+
+# Testing
+pytest
+pytest-cov
+pytest-asyncio
+
+# Code Quality
+black
+flake8
+isort
+
+# Utilities
+python-dateutil
+pyyaml
+deprecation
