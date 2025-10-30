@@ -7,8 +7,8 @@ from app.config import settings
 from app.database import engine, Base
 
 # Import routers (will be added as we build them)
-from app.routers import auth
-# from app.routers import auth, mentorship_logs, users, facilities, follow_ups, reports
+from app.routers import auth, facilities, mentorship_logs, users, follow_ups
+# from app.routers import reports
 
 # Note: Database tables are managed via Alembic migrations
 # For local development, run: alembic upgrade head
@@ -42,13 +42,13 @@ app.add_middleware(
 # Security middleware
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
 
-# Include routers (will be added as we build them)
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-# app.include_router(mentorship_logs.router, prefix="/api/mentorship-logs", tags=["mentorship_logs"])
-# app.include_router(users.router, prefix="/api/users", tags=["users"])
-# app.include_router(facilities.router, prefix="/api/facilities", tags=["facilities"])
-# app.include_router(follow_ups.router, prefix="/api/follow-ups", tags=["follow_ups"])
-# app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
+# Include routers
+app.include_router(auth.router)
+app.include_router(facilities.router)
+app.include_router(mentorship_logs.router)
+app.include_router(users.router)
+app.include_router(follow_ups.router)
+# app.include_router(reports.router)
 
 
 @app.get("/")

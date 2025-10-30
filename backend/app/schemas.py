@@ -73,6 +73,7 @@ class FacilityBase(BaseModel):
     code: Optional[str] = None
     location: Optional[str] = None
     state: Optional[str] = None
+    lga: Optional[str] = None  # Local Government Area
     facility_type: Optional[str] = None
     contact_person: Optional[str] = None
     contact_email: Optional[EmailStr] = None
@@ -88,6 +89,7 @@ class FacilityUpdate(BaseModel):
     code: Optional[str] = None
     location: Optional[str] = None
     state: Optional[str] = None
+    lga: Optional[str] = None
     facility_type: Optional[str] = None
     contact_person: Optional[str] = None
     contact_email: Optional[EmailStr] = None
@@ -103,17 +105,21 @@ class FacilityResponse(FacilityBase):
         from_attributes = True
 
 
-# Visit Objective Schemas
-class VisitObjectiveBase(BaseModel):
-    objective_text: str
-    sequence: Optional[int] = None
+# Skills Transfer Schemas (Section 4 of PDF)
+class SkillsTransferBase(BaseModel):
+    skill_knowledge_transferred: str
+    recipient_name: Optional[str] = None
+    recipient_cadre: Optional[str] = None
+    method: Optional[str] = None
+    competency_level: Optional[str] = None
+    followup_needed: bool = False
 
 
-class VisitObjectiveCreate(VisitObjectiveBase):
+class SkillsTransferCreate(SkillsTransferBase):
     pass
 
 
-class VisitObjectiveResponse(VisitObjectiveBase):
+class SkillsTransferResponse(SkillsTransferBase):
     id: UUID
     mentorship_log_id: UUID
     created_at: datetime
@@ -122,23 +128,35 @@ class VisitObjectiveResponse(VisitObjectiveBase):
         from_attributes = True
 
 
-# Follow-Up Schemas
+# Follow-Up Schemas (Section 5: Action Items from PDF)
 class FollowUpBase(BaseModel):
-    action_item: str
-    assigned_to: Optional[UUID] = None
-    due_date: Optional[date] = None
+    action_item: str  # Action Description
+    responsible_person: Optional[str] = None  # Responsible Person (can be text)
+    assigned_to: Optional[UUID] = None  # If linking to user table
+    target_date: Optional[date] = None  # Target Date
+    resources_needed: Optional[str] = None  # Resources Needed
+    priority: Optional[str] = None  # Priority (High/Medium/Low)
     notes: Optional[str] = None
 
 
-class FollowUpCreate(FollowUpBase):
+class FollowUpNested(FollowUpBase):
+    """For creating follow-ups nested within mentorship logs (no mentorship_log_id needed)"""
     pass
+
+
+class FollowUpCreate(FollowUpBase):
+    """For creating standalone follow-ups via API (mentorship_log_id required)"""
+    mentorship_log_id: UUID  # Required when creating standalone follow-up via API
 
 
 class FollowUpUpdate(BaseModel):
     action_item: Optional[str] = None
     status: Optional[FollowUpStatus] = None
+    responsible_person: Optional[str] = None
     assigned_to: Optional[UUID] = None
-    due_date: Optional[date] = None
+    target_date: Optional[date] = None
+    resources_needed: Optional[str] = None
+    priority: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -169,42 +187,68 @@ class AttachmentResponse(BaseModel):
         from_attributes = True
 
 
-# Mentorship Log Schemas
+# Mentorship Log Schemas (Matching ACE2 PDF Form)
 class MentorshipLogBase(BaseModel):
     facility_id: UUID
     visit_date: date
-    performance_summary: Optional[str] = None
-    identified_gaps: Optional[str] = None
-    trends_summary: Optional[str] = None
-    previous_followup: Optional[str] = None
-    persistent_challenges: Optional[str] = None
-    progress_made: Optional[str] = None
-    resources_needed: Optional[str] = None
-    facility_requests: Optional[str] = None
-    logistics_notes: Optional[str] = None
-    visit_outcomes: Optional[str] = None
-    lessons_learned: Optional[str] = None
+
+    # Header fields - Visit Details
+    interaction_type: Optional[str] = None  # On-site, Virtual, Phone
+    duration_hours: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    mentees_present: Optional[List[dict]] = []  # [{"name": "...", "cadre": "..."}]
+
+    # Section 1: Activities Conducted (array of selected activities)
+    activities_conducted: Optional[List[str]] = []
+    activities_other_specify: Optional[str] = None  # Text for "Other (specify)"
+
+    # Section 2: Thematic Areas Covered (array of selected themes)
+    thematic_areas: Optional[List[str]] = []
+    thematic_areas_other_specify: Optional[str] = None  # Text for "Other (specify)"
+
+    # Section 3: Observations
+    strengths_observed: Optional[str] = None
+    gaps_identified: Optional[str] = None
+    root_causes: Optional[str] = None
+
+    # Section 6: Challenges & Solutions
+    challenges_encountered: Optional[str] = None
+    solutions_proposed: Optional[str] = None
+    support_needed: Optional[str] = None
+
+    # Section 7: Success Stories (Optional)
+    success_stories: Optional[str] = None
+
+    # Section 8: Attachments - checkbox types
+    attachment_types: Optional[List[str]] = []  # ["Photos", "Tools/Templates", "Before/After", "Reference Materials"]
 
 
 class MentorshipLogCreate(MentorshipLogBase):
-    objectives: Optional[List[str]] = []
+    skills_transfers: Optional[List[SkillsTransferCreate]] = []
+    follow_ups: Optional[List[FollowUpCreate]] = []
 
 
 class MentorshipLogUpdate(BaseModel):
     facility_id: Optional[UUID] = None
     visit_date: Optional[date] = None
-    performance_summary: Optional[str] = None
-    identified_gaps: Optional[str] = None
-    trends_summary: Optional[str] = None
-    previous_followup: Optional[str] = None
-    persistent_challenges: Optional[str] = None
-    progress_made: Optional[str] = None
-    resources_needed: Optional[str] = None
-    facility_requests: Optional[str] = None
-    logistics_notes: Optional[str] = None
-    visit_outcomes: Optional[str] = None
-    lessons_learned: Optional[str] = None
-    objectives: Optional[List[str]] = None
+    interaction_type: Optional[str] = None
+    duration_hours: Optional[int] = None
+    duration_minutes: Optional[int] = None
+    mentees_present: Optional[List[dict]] = None
+    activities_conducted: Optional[List[str]] = None
+    activities_other_specify: Optional[str] = None
+    thematic_areas: Optional[List[str]] = None
+    thematic_areas_other_specify: Optional[str] = None
+    strengths_observed: Optional[str] = None
+    gaps_identified: Optional[str] = None
+    root_causes: Optional[str] = None
+    challenges_encountered: Optional[str] = None
+    solutions_proposed: Optional[str] = None
+    support_needed: Optional[str] = None
+    success_stories: Optional[str] = None
+    attachment_types: Optional[List[str]] = None
+    skills_transfers: Optional[List[SkillsTransferCreate]] = None
+    follow_ups: Optional[List[FollowUpCreate]] = None
 
 
 class MentorshipLogResponse(MentorshipLogBase):
@@ -217,8 +261,8 @@ class MentorshipLogResponse(MentorshipLogBase):
     approved_at: Optional[datetime] = None
     approved_by: Optional[UUID] = None
 
-    # Nested relationships
-    objectives: List[VisitObjectiveResponse] = []
+    # Nested relationships (Section 4, 5, 8)
+    skills_transfers: List[SkillsTransferResponse] = []
     follow_ups: List[FollowUpResponse] = []
     attachments: List[AttachmentResponse] = []
 

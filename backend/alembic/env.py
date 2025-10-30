@@ -9,7 +9,7 @@ from alembic import context
 from app.database import Base
 from app.config import settings
 from app.models import (
-    User, Facility, MentorshipLog, VisitObjective,
+    User, Facility, MentorshipLog, SkillsTransfer,
     FollowUp, Attachment, UserFacilityAssignment, AuditLog
 )
 

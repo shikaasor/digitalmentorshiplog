@@ -1,6 +1,7 @@
 import os
 from pydantic_settings import BaseSettings
-from typing import List
+from pydantic import field_validator
+from typing import List, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,8 +22,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_HOURS: int = 24
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
-    ALLOWED_HOSTS: List[str] = ["*"]
+    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8000"]
+    ALLOWED_HOSTS: Union[List[str], str] = ["*"]
+
+    @field_validator('ALLOWED_ORIGINS', 'ALLOWED_HOSTS', mode='before')
+    @classmethod
+    def parse_comma_separated(cls, v):
+        if isinstance(v, str):
+            return [item.strip() for item in v.split(',')]
+        return v
 
     # File Storage (Supabase Storage)
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET")

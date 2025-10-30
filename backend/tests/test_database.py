@@ -99,7 +99,7 @@ def test_base_metadata():
         "users",
         "facilities",
         "mentorship_logs",
-        "visit_objectives",
+        "skills_transfers",
         "follow_ups",
         "attachments",
         "user_facility_assignments",

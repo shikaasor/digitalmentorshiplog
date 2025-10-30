@@ -57,7 +57,8 @@ class Facility(Base):
     name = Column(String(255), nullable=False)
     code = Column(String(50), unique=True, index=True)
     location = Column(String(255))
-    state = Column(String(100))
+    state = Column(String(100), index=True)  # For filtering by state
+    lga = Column(String(100), index=True)  # Local Government Area for filtering
     facility_type = Column(String(100))
     contact_person = Column(String(255))
     contact_email = Column(String(255))
@@ -79,20 +80,39 @@ class MentorshipLog(Base):
     visit_date = Column(Date, nullable=False, index=True)
     status = Column(Enum(LogStatus), nullable=False, default=LogStatus.draft, index=True)
 
-    # Planning section fields
-    performance_summary = Column(Text)
-    identified_gaps = Column(Text)
-    trends_summary = Column(Text)
-    previous_followup = Column(Text)
-    persistent_challenges = Column(Text)
-    progress_made = Column(Text)
-    resources_needed = Column(Text)
-    facility_requests = Column(Text)
-    logistics_notes = Column(Text)
+    # Header fields - Visit Details
+    interaction_type = Column(String(50))  # On-site, Virtual, Phone
+    duration_hours = Column(Integer)
+    duration_minutes = Column(Integer)
+    mentees_present = Column(JSON)  # Array of {name: str, cadre: str}
 
-    # Reporting section fields
-    visit_outcomes = Column(Text)
-    lessons_learned = Column(Text)
+    # Section 1: Activities Conducted (stored as JSON array of selected activities)
+    activities_conducted = Column(JSON)  # Array of activity names
+    activities_other_specify = Column(Text)  # Text for "Other (specify)"
+
+    # Section 2: Thematic Areas Covered (stored as JSON array of selected themes)
+    thematic_areas = Column(JSON)  # Array of thematic area names
+    thematic_areas_other_specify = Column(Text)  # Text for "Other (specify)"
+
+    # Section 3: Observations
+    strengths_observed = Column(Text)
+    gaps_identified = Column(Text)
+    root_causes = Column(Text)
+
+    # Section 4: Skills Transfer - separate table (SkillsTransfer)
+
+    # Section 5: Action Items - separate table (FollowUp) with enhanced fields
+
+    # Section 6: Challenges & Solutions
+    challenges_encountered = Column(Text)
+    solutions_proposed = Column(Text)
+    support_needed = Column(Text)
+
+    # Section 7: Success Stories (Optional)
+    success_stories = Column(Text)
+
+    # Section 8: Attachments - checkboxes for attachment types
+    attachment_types = Column(JSON)  # Array: ["Photos", "Tools/Templates", "Before/After", "Reference Materials"]
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -105,33 +125,42 @@ class MentorshipLog(Base):
     facility = relationship("Facility", back_populates="mentorship_logs")
     mentor = relationship("User", back_populates="mentorship_logs", foreign_keys=[mentor_id])
     approver = relationship("User", back_populates="approved_logs", foreign_keys=[approved_by])
-    objectives = relationship("VisitObjective", back_populates="mentorship_log", cascade="all, delete-orphan")
+    skills_transfers = relationship("SkillsTransfer", back_populates="mentorship_log", cascade="all, delete-orphan")
     follow_ups = relationship("FollowUp", back_populates="mentorship_log", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="mentorship_log", cascade="all, delete-orphan")
 
 
-class VisitObjective(Base):
-    __tablename__ = "visit_objectives"
+class SkillsTransfer(Base):
+    """Section 4: Skills Transfer table from PDF"""
+    __tablename__ = "skills_transfers"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     mentorship_log_id = Column(UUID(as_uuid=True), ForeignKey("mentorship_logs.id"), nullable=False, index=True)
-    objective_text = Column(Text, nullable=False)
-    sequence = Column(Integer)
+    skill_knowledge_transferred = Column(Text, nullable=False)
+    recipient_name = Column(String(255))
+    recipient_cadre = Column(String(100))
+    method = Column(String(255))
+    competency_level = Column(String(100))
+    followup_needed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    mentorship_log = relationship("MentorshipLog", back_populates="objectives")
+    mentorship_log = relationship("MentorshipLog", back_populates="skills_transfers")
 
 
 class FollowUp(Base):
+    """Section 5: Action Items table from PDF"""
     __tablename__ = "follow_ups"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     mentorship_log_id = Column(UUID(as_uuid=True), ForeignKey("mentorship_logs.id"), nullable=False, index=True)
-    action_item = Column(Text, nullable=False)
+    action_item = Column(Text, nullable=False)  # Action Description
+    responsible_person = Column(String(255))  # Can be text or link to user
+    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"))  # If linking to user table
+    target_date = Column(Date)  # Target Date from PDF
+    resources_needed = Column(Text)  # Resources Needed
+    priority = Column(String(50))  # Priority (High/Medium/Low)
     status = Column(Enum(FollowUpStatus), nullable=False, default=FollowUpStatus.pending, index=True)
-    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    due_date = Column(Date)
     notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

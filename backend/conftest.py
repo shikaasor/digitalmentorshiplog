@@ -214,6 +214,7 @@ def test_facility_data():
         "code": "TEST-001",
         "location": "Test Location",
         "state": "Test State",
+        "lga": "Test LGA",
         "facility_type": "Primary Care",
         "contact_person": "Dr. Test Person",
         "contact_email": "contact@testclinic.com",
@@ -297,18 +298,28 @@ def admin_headers(admin_token):
 @pytest.fixture
 def test_mentorship_log_data(test_facility):
     """
-    Provide sample mentorship log data for tests.
+    Provide sample mentorship log data for tests (ACE2 PDF form structure).
     """
     return {
         "facility_id": str(test_facility.id),
         "visit_date": "2025-11-20",
-        "performance_summary": "Test performance summary",
-        "identified_gaps": "Test identified gaps",
-        "objectives": [
-            "Test objective 1",
-            "Test objective 2",
-            "Test objective 3"
-        ]
+        # Header fields
+        "interaction_type": "On-site",
+        "duration_hours": 3,
+        "duration_minutes": 30,
+        "mentees_present": ["Dr. John Doe", "Nurse Jane Smith"],
+        # Section 1: Activities Conducted
+        "activities_conducted": ["Direct clinical service", "Mentoring/Coaching"],
+        # Section 2: Thematic Areas Covered
+        "thematic_areas": ["General HIV care and treatment", "TB/HIV services"],
+        # Section 3: Observations
+        "strengths_observed": "Good patient record management",
+        "gaps_identified": "Need for additional training on ART adherence",
+        "root_causes": "Limited staff capacity",
+        # Section 6: Challenges & Solutions
+        "challenges_encountered": "Staff shortage during visit",
+        "solutions_proposed": "Recommended additional training",
+        "support_needed": "Training materials for ART adherence"
     }
 
 

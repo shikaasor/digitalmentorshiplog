@@ -8,7 +8,7 @@ import pytest
 from datetime import date, timedelta
 
 from app.models import (
-    User, Facility, MentorshipLog, VisitObjective,
+    User, Facility, MentorshipLog, SkillsTransfer,
     FollowUp, Attachment, UserFacilityAssignment,
     UserRole, LogStatus, FollowUpStatus
 )
@@ -147,47 +147,56 @@ class TestMentorshipLogModel:
 
 
 @pytest.mark.unit
-class TestVisitObjectiveModel:
-    """Tests for VisitObjective model"""
+class TestSkillsTransferModel:
+    """Tests for SkillsTransfer model (Section 4 of PDF)"""
 
-    def test_create_visit_objective(self, db_session):
-        """Test creating a visit objective"""
+    def test_create_skills_transfer(self, db_session):
+        """Test creating a skills transfer record"""
         mentor = create_test_user(db_session)
         facility = create_test_facility(db_session)
         log = create_test_mentorship_log(db_session, mentor=mentor, facility=facility)
 
-        objective = VisitObjective(
+        skills_transfer = SkillsTransfer(
             mentorship_log_id=log.id,
-            objective_text="Improve staff training",
-            sequence=1
+            skill_knowledge_transferred="Advanced ART initiation and monitoring",
+            recipient_name="Dr. Ahmed Ibrahim",
+            recipient_cadre="Doctor",
+            method="Side-by-side mentorship",
+            competency_level="Intermediate",
+            followup_needed=True
         )
-        db_session.add(objective)
+        db_session.add(skills_transfer)
         db_session.commit()
-        db_session.refresh(objective)
+        db_session.refresh(skills_transfer)
 
-        assert objective.id is not None
-        assert objective.mentorship_log_id == log.id
-        assert objective.objective_text == "Improve staff training"
-        assert objective.sequence == 1
+        assert skills_transfer.id is not None
+        assert skills_transfer.mentorship_log_id == log.id
+        assert skills_transfer.skill_knowledge_transferred == "Advanced ART initiation and monitoring"
+        assert skills_transfer.recipient_name == "Dr. Ahmed Ibrahim"
+        assert skills_transfer.recipient_cadre == "Doctor"
+        assert skills_transfer.method == "Side-by-side mentorship"
+        assert skills_transfer.competency_level == "Intermediate"
+        assert skills_transfer.followup_needed is True
 
-    def test_visit_objective_relationship(self, db_session):
-        """Test visit objective relationship with mentorship log"""
+    def test_skills_transfer_relationship(self, db_session):
+        """Test skills transfer relationship with mentorship log"""
         mentor = create_test_user(db_session)
         facility = create_test_facility(db_session)
         log = create_test_mentorship_log(db_session, mentor=mentor, facility=facility)
 
-        objective = VisitObjective(
+        skills_transfer = SkillsTransfer(
             mentorship_log_id=log.id,
-            objective_text="Test objective",
-            sequence=1
+            skill_knowledge_transferred="TB/HIV co-infection management",
+            recipient_name="Nurse Fatima Usman",
+            recipient_cadre="Nurse"
         )
-        db_session.add(objective)
+        db_session.add(skills_transfer)
         db_session.commit()
 
         # Refresh and test relationship
         db_session.refresh(log)
-        assert len(log.objectives) == 1
-        assert log.objectives[0].objective_text == "Test objective"
+        assert len(log.skills_transfers) == 1
+        assert log.skills_transfers[0].skill_knowledge_transferred == "TB/HIV co-infection management"
 
 
 @pytest.mark.unit
@@ -205,7 +214,10 @@ class TestFollowUpModel:
             action_item="Schedule training session",
             status=FollowUpStatus.pending,
             assigned_to=mentor.id,
-            due_date=date.today() + timedelta(days=30)
+            target_date=date.today() + timedelta(days=30),
+            responsible_person="Dr. Ahmed Ibrahim",
+            priority="High",
+            resources_needed="Training materials and venue"
         )
         db_session.add(follow_up)
         db_session.commit()
@@ -215,6 +227,10 @@ class TestFollowUpModel:
         assert follow_up.action_item == "Schedule training session"
         assert follow_up.status == FollowUpStatus.pending
         assert follow_up.assigned_to == mentor.id
+        assert follow_up.target_date == date.today() + timedelta(days=30)
+        assert follow_up.responsible_person == "Dr. Ahmed Ibrahim"
+        assert follow_up.priority == "High"
+        assert follow_up.resources_needed == "Training materials and venue"
 
     def test_follow_up_status_enum(self, db_session):
         """Test follow-up status enum values"""
@@ -280,24 +296,26 @@ class TestUserFacilityAssignmentModel:
 class TestModelCascadeDeletes:
     """Tests for cascade delete behavior"""
 
-    def test_delete_mentorship_log_deletes_objectives(self, db_session):
-        """Test that deleting a log deletes its objectives"""
+    def test_delete_mentorship_log_deletes_skills_transfers(self, db_session):
+        """Test that deleting a log deletes its skills transfers"""
         mentor = create_test_user(db_session)
         facility = create_test_facility(db_session)
         log = create_test_mentorship_log(db_session, mentor=mentor, facility=facility)
 
-        # Add objectives
-        objective1 = VisitObjective(
+        # Add skills transfers
+        skills1 = SkillsTransfer(
             mentorship_log_id=log.id,
-            objective_text="Objective 1",
-            sequence=1
+            skill_knowledge_transferred="ART initiation",
+            recipient_name="Dr. Ahmed",
+            recipient_cadre="Doctor"
         )
-        objective2 = VisitObjective(
+        skills2 = SkillsTransfer(
             mentorship_log_id=log.id,
-            objective_text="Objective 2",
-            sequence=2
+            skill_knowledge_transferred="TB screening",
+            recipient_name="Nurse Fatima",
+            recipient_cadre="Nurse"
         )
-        db_session.add_all([objective1, objective2])
+        db_session.add_all([skills1, skills2])
         db_session.commit()
 
         log_id = log.id
@@ -306,11 +324,11 @@ class TestModelCascadeDeletes:
         db_session.delete(log)
         db_session.commit()
 
-        # Verify objectives were also deleted
-        objectives = db_session.query(VisitObjective).filter_by(
+        # Verify skills transfers were also deleted
+        skills = db_session.query(SkillsTransfer).filter_by(
             mentorship_log_id=log_id
         ).all()
-        assert len(objectives) == 0
+        assert len(skills) == 0
 
     def test_delete_mentorship_log_deletes_follow_ups(self, db_session):
         """Test that deleting a log deletes its follow-ups"""

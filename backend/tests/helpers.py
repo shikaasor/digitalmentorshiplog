@@ -17,7 +17,7 @@ def create_test_user(
     email: str = "user@test.com",
     name: str = "Test User",
     role: UserRole = UserRole.mentor,
-    password: str = "testpass123",
+    password: str = "password123",
     **kwargs
 ) -> User:
     """
@@ -74,7 +74,8 @@ def create_test_facility(
         name=name,
         code=code,
         location=kwargs.get("location", "Test Location"),
-        state=kwargs.get("state", "Test State"),
+        state=kwargs.get("state", "Kano"),
+        lga=kwargs.get("lga", "Test LGA"),
         facility_type=kwargs.get("facility_type", "Primary Care"),
         contact_person=kwargs.get("contact_person"),
         contact_email=kwargs.get("contact_email"),
@@ -88,26 +89,33 @@ def create_test_facility(
 
 def create_test_mentorship_log(
     db_session,
-    mentor: User,
-    facility: Facility,
+    mentor: User = None,
+    facility: Facility = None,
     visit_date: Optional[date] = None,
     status: LogStatus = LogStatus.draft,
     **kwargs
 ) -> MentorshipLog:
     """
     Create a test mentorship log with default or custom values.
+    Updated to match ACE2 PDF form structure.
 
     Args:
         db_session: Database session
-        mentor: Mentor user
-        facility: Facility
+        mentor: Mentor user (created if not provided)
+        facility: Facility (created if not provided)
         visit_date: Visit date (defaults to tomorrow)
         status: Log status
-        **kwargs: Additional log fields
+        **kwargs: Additional log fields (matching new PDF structure)
 
     Returns:
         MentorshipLog: Created log object
     """
+    # Create mentor and facility if not provided
+    if mentor is None:
+        mentor = create_test_user(db_session, email=f"mentor-{uuid.uuid4()}@test.com")
+    if facility is None:
+        facility = create_test_facility(db_session)
+
     if visit_date is None:
         visit_date = date.today() + timedelta(days=1)
 
@@ -116,17 +124,29 @@ def create_test_mentorship_log(
         facility_id=facility.id,
         visit_date=visit_date,
         status=status,
-        performance_summary=kwargs.get("performance_summary", "Test summary"),
-        identified_gaps=kwargs.get("identified_gaps"),
-        trends_summary=kwargs.get("trends_summary"),
-        previous_followup=kwargs.get("previous_followup"),
-        persistent_challenges=kwargs.get("persistent_challenges"),
-        progress_made=kwargs.get("progress_made"),
-        resources_needed=kwargs.get("resources_needed"),
-        facility_requests=kwargs.get("facility_requests"),
-        logistics_notes=kwargs.get("logistics_notes"),
-        visit_outcomes=kwargs.get("visit_outcomes"),
-        lessons_learned=kwargs.get("lessons_learned"),
+        # Header fields
+        interaction_type=kwargs.get("interaction_type", "On-site"),
+        duration_hours=kwargs.get("duration_hours", 2),
+        duration_minutes=kwargs.get("duration_minutes", 30),
+        mentees_present=kwargs.get("mentees_present", []),
+        # Section 1: Activities Conducted
+        activities_conducted=kwargs.get("activities_conducted", ["Direct clinical service"]),
+        activities_other_specify=kwargs.get("activities_other_specify"),
+        # Section 2: Thematic Areas Covered
+        thematic_areas=kwargs.get("thematic_areas", ["General HIV care and treatment"]),
+        thematic_areas_other_specify=kwargs.get("thematic_areas_other_specify"),
+        # Section 3: Observations
+        strengths_observed=kwargs.get("strengths_observed"),
+        gaps_identified=kwargs.get("gaps_identified"),
+        root_causes=kwargs.get("root_causes"),
+        # Section 6: Challenges & Solutions
+        challenges_encountered=kwargs.get("challenges_encountered"),
+        solutions_proposed=kwargs.get("solutions_proposed"),
+        support_needed=kwargs.get("support_needed"),
+        # Section 7: Success Stories
+        success_stories=kwargs.get("success_stories"),
+        # Section 8: Attachments
+        attachment_types=kwargs.get("attachment_types", []),
     )
     db_session.add(log)
     db_session.commit()
