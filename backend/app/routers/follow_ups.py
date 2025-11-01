@@ -9,11 +9,12 @@ from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import datetime
 
 from app.database import get_db
 from app.models import FollowUp, MentorshipLog, User, UserRole, FollowUpStatus
-from app.schemas import FollowUpCreate, FollowUpUpdate, FollowUpResponse
+from app.schemas import FollowUpCreate, FollowUpUpdate, FollowUpResponse, PaginatedResponse
 from app.dependencies import get_current_user, require_role
 
 
@@ -75,7 +76,7 @@ def check_follow_up_update_permissions(current_user: User, follow_up: FollowUp) 
     )
 
 
-@router.get("", response_model=List[FollowUpResponse])
+@router.get("", response_model=PaginatedResponse[FollowUpResponse])
 def list_follow_ups(
     status: Optional[FollowUpStatus] = Query(None, description="Filter by status"),
     mentorship_log_id: Optional[UUID] = Query(None, description="Filter by mentorship log"),
@@ -95,9 +96,21 @@ def list_follow_ups(
     - **assigned_to**: Filter by assigned user
     - **priority**: Filter by priority (High, Medium, Low)
 
-    Authenticated users can view follow-ups.
+    Permissions:
+    - Admins and supervisors can view all follow-ups
+    - Mentors can only view follow-ups from their own logs or assigned to them
     """
     query = db.query(FollowUp)
+
+    # Role-based filtering for mentors
+    if current_user.role == UserRole.mentor:
+        # Mentors can only see follow-ups from their own logs or assigned to them
+        query = query.join(FollowUp.mentorship_log).filter(
+            or_(
+                MentorshipLog.mentor_id == current_user.id,
+                FollowUp.assigned_to == current_user.id
+            )
+        )
 
     # Apply filters
     if status:
@@ -112,6 +125,9 @@ def list_follow_ups(
     if priority:
         query = query.filter(FollowUp.priority == priority)
 
+    # Get total count
+    total = query.count()
+
     # Apply pagination and ordering
     follow_ups = (
         query
@@ -121,7 +137,12 @@ def list_follow_ups(
         .all()
     )
 
-    return follow_ups
+    return PaginatedResponse(
+        items=follow_ups,
+        total=total,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/{follow_up_id}", response_model=FollowUpResponse)

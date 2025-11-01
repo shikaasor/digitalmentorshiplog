@@ -6,14 +6,18 @@ import { useRouter } from 'next/navigation'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
 import { facilitiesService, FacilityFilters } from '@/lib/api/facilities.service'
-import { Facility } from '@/types'
+import { Facility, UserRole } from '@/types'
+import { useAuthStore } from '@/lib/stores/auth.store'
 
 export default function FacilitiesPage() {
   const router = useRouter()
+  const { user } = useAuthStore()
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
+
+  const isAdmin = user?.role === UserRole.ADMIN
 
   // Filters
   const [stateFilter, setStateFilter] = useState('')
@@ -93,25 +97,27 @@ export default function FacilitiesPage() {
               Manage healthcare facilities in the mentorship program
             </p>
           </div>
-          <Link
-            href="/facilities/new"
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {isAdmin && (
+            <Link
+              href="/facilities/new"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Add New Facility
-          </Link>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Add New Facility
+            </Link>
+          )}
         </div>
 
         {/* Filters */}
@@ -286,9 +292,11 @@ export default function FacilitiesPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Contact
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    {isAdmin && (
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -324,26 +332,28 @@ export default function FacilitiesPage() {
                         )}
                         {!facility.contact_person && 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/facilities/${facility.id}/edit`)
-                          }}
-                          className="text-blue-600 hover:text-blue-800 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(facility.id, facility.name)
-                          }}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Delete
-                        </button>
-                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/facilities/${facility.id}/edit`)
+                            }}
+                            className="text-blue-600 hover:text-blue-800 mr-4"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(facility.id, facility.name)
+                            }}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -396,9 +406,11 @@ export default function FacilitiesPage() {
             <p className="mt-1 text-sm text-gray-500">
               {searchTerm || stateFilter || facilityTypeFilter
                 ? 'Try adjusting your filters.'
-                : 'Get started by adding a new facility.'}
+                : isAdmin
+                ? 'Get started by adding a new facility.'
+                : 'No facilities available at the moment.'}
             </p>
-            {!searchTerm && !stateFilter && !facilityTypeFilter && (
+            {isAdmin && !searchTerm && !stateFilter && !facilityTypeFilter && (
               <div className="mt-6">
                 <Link
                   href="/facilities/new"

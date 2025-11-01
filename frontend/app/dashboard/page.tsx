@@ -5,18 +5,28 @@ import Link from 'next/link'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
 import { reportsService } from '@/lib/api/reports.service'
-import { SummaryReport } from '@/types'
+import { mentorshipLogsService } from '@/lib/api/mentorship-logs.service'
+import { followUpsService } from '@/lib/api/follow-ups.service'
+import { SummaryReport, UserRole } from '@/types'
 import { useAuthStore } from '@/lib/stores/auth.store'
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const [summary, setSummary] = useState<SummaryReport | null>(null)
+  const [mentorStats, setMentorStats] = useState({ logs: 0, followUps: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const isMentor = user?.role === UserRole.MENTOR
+  const isAdminOrSupervisor = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPERVISOR
+
   useEffect(() => {
-    loadSummary()
-  }, [])
+    if (isAdminOrSupervisor) {
+      loadSummary()
+    } else if (isMentor) {
+      loadMentorStats()
+    }
+  }, [user])
 
   const loadSummary = async () => {
     try {
@@ -25,6 +35,28 @@ export default function DashboardPage() {
       setSummary(data)
     } catch (err: any) {
       setError(err.message || 'Failed to load summary')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadMentorStats = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Load mentor's own logs and follow-ups counts
+      const [logsResponse, followUpsResponse] = await Promise.all([
+        mentorshipLogsService.getAll({ limit: 1 }),
+        followUpsService.getAll({ limit: 1 })
+      ])
+
+      setMentorStats({
+        logs: logsResponse.total || 0,
+        followUps: followUpsResponse.total || 0
+      })
+    } catch (err: any) {
+      setError(err.message || 'Failed to load your statistics')
     } finally {
       setLoading(false)
     }
@@ -72,7 +104,157 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {!loading && summary && (
+        {/* Mentor Dashboard */}
+        {!loading && isMentor && (
+          <>
+            {/* Mentor KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* My Logs */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">My Logs</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                      {mentorStats.logs}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-4">
+                  Total mentorship logs created
+                </p>
+              </div>
+
+              {/* My Follow-ups */}
+              <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">My Follow-ups</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">
+                      {mentorStats.followUps}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-6 h-6 text-yellow-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-4">
+                  Total action items created
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Link
+                  href="/mentorship-logs/new"
+                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Create New Log</p>
+                    <p className="text-sm text-gray-500">Document a mentorship visit</p>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/mentorship-logs"
+                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">View My Logs</p>
+                    <p className="text-sm text-gray-500">Browse your logs</p>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/follow-ups"
+                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-yellow-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">View Follow-ups</p>
+                    <p className="text-sm text-gray-500">Track action items</p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Admin/Supervisor Dashboard */}
+        {!loading && isAdminOrSupervisor && summary && (
           <>
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

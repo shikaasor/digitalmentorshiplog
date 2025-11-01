@@ -264,6 +264,7 @@ export interface FollowUpCreate {
 
 export interface FollowUpUpdate {
   action_item?: string
+  status?: FollowUpStatus
   responsible_person?: string
   assigned_to?: string
   target_date?: string
