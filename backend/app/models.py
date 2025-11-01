@@ -120,6 +120,8 @@ class MentorshipLog(Base):
     submitted_at = Column(DateTime(timezone=True))
     approved_at = Column(DateTime(timezone=True))
     approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    rejected_at = Column(DateTime(timezone=True))
+    rejection_reason = Column(Text)
 
     # Relationships
     facility = relationship("Facility", back_populates="mentorship_logs")

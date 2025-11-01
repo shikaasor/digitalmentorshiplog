@@ -1,10 +1,13 @@
 /**
  * TypeScript Type Definitions
  *
- * These types match the backend Pydantic schemas and database models
+ * These types match the backend API Pydantic schemas
  */
 
+// ============================================================================
 // Enums
+// ============================================================================
+
 export enum UserRole {
   MENTOR = 'mentor',
   SUPERVISOR = 'supervisor',
@@ -15,7 +18,6 @@ export enum LogStatus {
   DRAFT = 'draft',
   SUBMITTED = 'submitted',
   APPROVED = 'approved',
-  COMPLETED = 'completed',
 }
 
 export enum FollowUpStatus {
@@ -24,7 +26,33 @@ export enum FollowUpStatus {
   COMPLETED = 'completed',
 }
 
+// ============================================================================
+// Auth Types
+// ============================================================================
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface RegisterRequest {
+  email: string
+  password: string
+  name: string
+  designation?: string
+  region_state?: string
+  role: UserRole
+}
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+}
+
+// ============================================================================
 // User Types
+// ============================================================================
+
 export interface User {
   id: string
   email: string
@@ -37,23 +65,13 @@ export interface User {
   updated_at: string
 }
 
-export interface LoginRequest {
-  email: string
-  password: string
-}
-
-export interface TokenResponse {
-  access_token: string
-  token_type: string
-}
-
 export interface UserCreate {
   email: string
+  password: string
   name: string
   designation?: string
   region_state?: string
   role: UserRole
-  password: string
 }
 
 export interface UserUpdate {
@@ -64,13 +82,17 @@ export interface UserUpdate {
   is_active?: boolean
 }
 
+// ============================================================================
 // Facility Types
+// ============================================================================
+
 export interface Facility {
   id: string
   name: string
   code?: string
   location?: string
   state?: string
+  lga?: string
   facility_type?: string
   contact_person?: string
   contact_email?: string
@@ -84,6 +106,7 @@ export interface FacilityCreate {
   code?: string
   location?: string
   state?: string
+  lga?: string
   facility_type?: string
   contact_person?: string
   contact_email?: string
@@ -95,56 +118,164 @@ export interface FacilityUpdate {
   code?: string
   location?: string
   state?: string
+  lga?: string
   facility_type?: string
   contact_person?: string
   contact_email?: string
   contact_phone?: string
 }
 
-// Visit Objective Types
-export interface VisitObjective {
+// ============================================================================
+// Mentorship Log Types
+// ============================================================================
+
+export interface MenteesPresent {
+  name: string
+  cadre?: string
+}
+
+export interface SkillsTransfer {
+  skill_knowledge_transferred: string
+  recipient_name: string
+  recipient_cadre?: string
+  method?: string
+  competency_level?: string
+  followup_needed?: boolean
+}
+
+export interface FollowUpNested {
+  action_item: string
+  responsible_person?: string
+  assigned_to?: string
+  target_date?: string
+  resources_needed?: string
+  priority?: string
+  notes?: string
+}
+
+export interface MentorshipLog {
   id: string
-  mentorship_log_id: string
-  objective_text: string
-  sequence?: number
+  facility_id: string
+  mentor_id: string
+  visit_date: string
+  interaction_type?: string
+  duration_hours?: number
+  duration_minutes?: number
+  status: LogStatus
+
+  // Visit Details
+  mentees_present?: MenteesPresent[]
+  activities_conducted?: string[]
+  activities_other_specify?: string
+  thematic_areas?: string[]
+  thematic_areas_other_specify?: string
+
+  // Assessment
+  strengths_observed?: string
+  gaps_identified?: string
+  root_causes?: string
+  challenges_encountered?: string
+  solutions_proposed?: string
+  support_needed?: string
+  success_stories?: string
+
+  // Attachments
+  attachment_types?: string[]
+
+  // Nested data
+  skills_transfers: SkillsTransfer[]
+  follow_ups: FollowUpNested[]
+  attachments: Attachment[]
+
+  // Relationships (loaded from backend)
+  facility?: Facility
+  mentor?: User
+  approver?: User
+
+  // Metadata
   created_at: string
+  updated_at: string
+  submitted_at?: string
+  approved_at?: string
+  approved_by?: string
+  rejected_at?: string
+  rejection_reason?: string
 }
 
-export interface VisitObjectiveCreate {
-  objective_text: string
-  sequence?: number
+export interface MentorshipLogCreate {
+  facility_id: string
+  visit_date: string
+  interaction_type?: string
+  duration_hours?: number
+  duration_minutes?: number
+
+  mentees_present?: MenteesPresent[]
+  activities_conducted?: string[]
+  activities_other_specify?: string
+  thematic_areas?: string[]
+  thematic_areas_other_specify?: string
+
+  strengths_observed?: string
+  gaps_identified?: string
+  root_causes?: string
+  challenges_encountered?: string
+  solutions_proposed?: string
+  support_needed?: string
+  success_stories?: string
+
+  attachment_types?: string[]
+
+  skills_transfers?: SkillsTransfer[]
+  follow_ups?: FollowUpNested[]
 }
 
-// Follow-Up Types
+export interface MentorshipLogUpdate extends MentorshipLogCreate {}
+
+// ============================================================================
+// Follow-Up Types (Standalone)
+// ============================================================================
+
 export interface FollowUp {
   id: string
   mentorship_log_id: string
   action_item: string
-  status: FollowUpStatus
+  responsible_person?: string
   assigned_to?: string
-  due_date?: string
+  target_date?: string
+  resources_needed?: string
+  priority?: string
   notes?: string
+  status: FollowUpStatus
+  completed_at?: string
   created_at: string
   updated_at: string
-  completed_at?: string
 }
 
 export interface FollowUpCreate {
+  mentorship_log_id: string
   action_item: string
+  responsible_person?: string
   assigned_to?: string
-  due_date?: string
+  target_date?: string
+  resources_needed?: string
+  priority?: string
   notes?: string
 }
 
 export interface FollowUpUpdate {
   action_item?: string
-  status?: FollowUpStatus
+  responsible_person?: string
   assigned_to?: string
-  due_date?: string
+  target_date?: string
+  resources_needed?: string
+  priority?: string
   notes?: string
 }
 
+// ============================================================================
 // Attachment Types
+// ============================================================================
+
 export interface Attachment {
   id: string
   mentorship_log_id: string
@@ -156,112 +287,88 @@ export interface Attachment {
   created_at: string
 }
 
-// Mentorship Log Types
-export interface MentorshipLog {
-  id: string
-  facility_id: string
+// ============================================================================
+// Report Types
+// ============================================================================
+
+export interface SummaryReport {
+  total_logs: number
+  logs_by_status: Record<string, number>
+  total_facilities: number
+  total_mentors: number
+  total_follow_ups: number
+  follow_ups_by_status: Record<string, number>
+}
+
+export interface MentorLogCount {
   mentor_id: string
-  visit_date: string
-  status: LogStatus
-
-  // Planning section
-  performance_summary?: string
-  identified_gaps?: string
-  trends_summary?: string
-  previous_followup?: string
-  persistent_challenges?: string
-  progress_made?: string
-  resources_needed?: string
-  facility_requests?: string
-  logistics_notes?: string
-
-  // Reporting section
-  visit_outcomes?: string
-  lessons_learned?: string
-
-  // Metadata
-  created_at: string
-  updated_at: string
-  submitted_at?: string
-  approved_at?: string
-  approved_by?: string
-
-  // Nested relationships
-  objectives: VisitObjective[]
-  follow_ups: FollowUp[]
-  attachments: Attachment[]
+  mentor_name: string
+  count: number
 }
 
-export interface MentorshipLogCreate {
+export interface FacilityLogCount {
   facility_id: string
-  visit_date: string
-  performance_summary?: string
-  identified_gaps?: string
-  trends_summary?: string
-  previous_followup?: string
-  persistent_challenges?: string
-  progress_made?: string
-  resources_needed?: string
-  facility_requests?: string
-  logistics_notes?: string
-  visit_outcomes?: string
-  lessons_learned?: string
-  objectives?: string[]
+  facility_name: string
+  count: number
 }
 
-export interface MentorshipLogUpdate {
-  facility_id?: string
-  visit_date?: string
-  performance_summary?: string
-  identified_gaps?: string
-  trends_summary?: string
-  previous_followup?: string
-  persistent_challenges?: string
-  progress_made?: string
-  resources_needed?: string
-  facility_requests?: string
-  logistics_notes?: string
-  visit_outcomes?: string
-  lessons_learned?: string
-  objectives?: string[]
+export interface StateLogCount {
+  state: string
+  count: number
 }
 
-// User-Facility Assignment Types
-export interface UserFacilityAssignment {
-  id: string
-  user_id: string
+export interface MentorshipLogsReport {
+  total_count: number
+  logs_by_mentor: MentorLogCount[]
+  logs_by_facility: FacilityLogCount[]
+  logs_by_state: StateLogCount[]
+}
+
+export interface FollowUpsReport {
+  total_count: number
+  pending_count: number
+  overdue_count: number
+  by_status: Record<string, number>
+}
+
+export interface FacilityCoverageItem {
   facility_id: string
-  assigned_at: string
+  facility_name: string
+  facility_code?: string
+  state?: string
+  lga?: string
+  visit_count: number
+  last_visit_date?: string
 }
 
+export interface FacilityCoverageReport {
+  total_facilities: number
+  visited_facilities: number
+  unvisited_facilities: number
+  facilities: FacilityCoverageItem[]
+}
+
+// ============================================================================
 // API Response Types
+// ============================================================================
+
 export interface PaginatedResponse<T> {
   items: T[]
   total: number
-  page: number
-  size: number
-  pages: number
+  skip: number
+  limit: number
 }
 
 export interface ApiError {
   detail: string
-  status_code: number
 }
 
-// Dashboard Types
-export interface DashboardMetrics {
-  total_logs: number
-  planned_visits: number
-  completed_visits: number
-  pending_approvals: number
-  overdue_followups: number
+export interface ValidationError {
+  loc: (string | number)[]
+  msg: string
+  type: string
 }
 
-export interface FacilityPerformance {
-  facility_id: string
-  facility_name: string
-  visits_count: number
-  completed_followups: number
-  pending_followups: number
-  last_visit_date?: string
+export interface ApiValidationError {
+  detail: ValidationError[]
 }

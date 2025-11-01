@@ -13,18 +13,19 @@ from sqlalchemy import or_
 
 from app.database import get_db
 from app.models import Facility, User, UserRole
-from app.schemas import FacilityCreate, FacilityUpdate, FacilityResponse
+from app.schemas import FacilityCreate, FacilityUpdate, FacilityResponse, PaginatedResponse
 from app.dependencies import get_current_user, require_role
 
 
 router = APIRouter(prefix="/api/facilities", tags=["facilities"])
 
 
-@router.get("", response_model=List[FacilityResponse])
+@router.get("", response_model=PaginatedResponse[FacilityResponse])
 def list_facilities(
     state: Optional[str] = Query(None, description="Filter by state (e.g., Kano, Jigawa, Bauchi)"),
     lga: Optional[str] = Query(None, description="Filter by Local Government Area"),
     search: Optional[str] = Query(None, description="Search facilities by name or code"),
+    facility_type: Optional[str] = Query(None, description="Filter by facility type"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=500, description="Maximum number of records to return"),
     db: Session = Depends(get_db),
@@ -37,6 +38,7 @@ def list_facilities(
     - **state**: Filter by state (Kano, Jigawa, or Bauchi)
     - **lga**: Filter by Local Government Area
     - **search**: Search by facility name or code
+    - **facility_type**: Filter by facility type
 
     Authenticated users can view all facilities.
     """
@@ -49,6 +51,9 @@ def list_facilities(
     if lga:
         query = query.filter(Facility.lga.ilike(f"%{lga}%"))
 
+    if facility_type:
+        query = query.filter(Facility.facility_type.ilike(f"%{facility_type}%"))
+
     if search:
         query = query.filter(
             or_(
@@ -56,6 +61,9 @@ def list_facilities(
                 Facility.code.ilike(f"%{search}%")
             )
         )
+
+    # Get total count before pagination
+    total = query.count()
 
     # Apply pagination and ordering
     facilities = (
@@ -66,7 +74,12 @@ def list_facilities(
         .all()
     )
 
-    return facilities
+    return PaginatedResponse(
+        items=facilities,
+        total=total,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/{facility_id}", response_model=FacilityResponse)

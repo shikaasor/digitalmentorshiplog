@@ -7,8 +7,7 @@ from app.config import settings
 from app.database import engine, Base
 
 # Import routers (will be added as we build them)
-from app.routers import auth, facilities, mentorship_logs, users, follow_ups
-# from app.routers import reports
+from app.routers import auth, facilities, mentorship_logs, users, follow_ups, reports, attachments
 
 # Note: Database tables are managed via Alembic migrations
 # For local development, run: alembic upgrade head
@@ -18,6 +17,14 @@ from app.routers import auth, facilities, mentorship_logs, users, follow_ups
 async def lifespan(app: FastAPI):
     # Startup
     print("Application starting up...")
+
+    # Initialize Supabase Storage bucket
+    try:
+        from app.storage import storage_service
+        storage_service.create_bucket_if_not_exists()
+    except Exception as e:
+        print(f"Warning: Could not initialize storage: {str(e)}")
+
     yield
     # Shutdown
     print("Application shutting down...")
@@ -48,7 +55,8 @@ app.include_router(facilities.router)
 app.include_router(mentorship_logs.router)
 app.include_router(users.router)
 app.include_router(follow_ups.router)
-# app.include_router(reports.router)
+app.include_router(reports.router)
+app.include_router(attachments.router)
 
 
 @app.get("/")

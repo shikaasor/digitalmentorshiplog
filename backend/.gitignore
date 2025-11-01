@@ -64,3 +64,6 @@ uploads/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Uploaded files
+uploads/

@@ -53,3 +53,22 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Force light backgrounds on form elements to prevent dark mode issues */
+input,
+select,
+textarea {
+  background-color: white !important;
+  color: #1f2937 !important; /* gray-800 */
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+/* Ensure option elements in selects are visible */
+option {
+  background-color: white !important;
+  color: #1f2937 !important;
+}

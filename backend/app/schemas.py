@@ -1,8 +1,11 @@
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List
+from typing import Optional, List, Generic, TypeVar
 from datetime import date, datetime
 from uuid import UUID
 from enum import Enum
+
+# Generic type for paginated responses
+T = TypeVar('T')
 
 
 # Enums
@@ -34,6 +37,14 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+# Generic Paginated Response
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    skip: int
+    limit: int
 
 
 # User Schemas
@@ -225,7 +236,7 @@ class MentorshipLogBase(BaseModel):
 
 class MentorshipLogCreate(MentorshipLogBase):
     skills_transfers: Optional[List[SkillsTransferCreate]] = []
-    follow_ups: Optional[List[FollowUpCreate]] = []
+    follow_ups: Optional[List[FollowUpNested]] = []  # Use FollowUpNested for nested creation
 
 
 class MentorshipLogUpdate(BaseModel):
@@ -248,7 +259,7 @@ class MentorshipLogUpdate(BaseModel):
     success_stories: Optional[str] = None
     attachment_types: Optional[List[str]] = None
     skills_transfers: Optional[List[SkillsTransferCreate]] = None
-    follow_ups: Optional[List[FollowUpCreate]] = None
+    follow_ups: Optional[List[FollowUpNested]] = None  # Use FollowUpNested for nested update
 
 
 class MentorshipLogResponse(MentorshipLogBase):
@@ -260,11 +271,18 @@ class MentorshipLogResponse(MentorshipLogBase):
     submitted_at: Optional[datetime] = None
     approved_at: Optional[datetime] = None
     approved_by: Optional[UUID] = None
+    rejected_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
 
     # Nested relationships (Section 4, 5, 8)
     skills_transfers: List[SkillsTransferResponse] = []
     follow_ups: List[FollowUpResponse] = []
     attachments: List[AttachmentResponse] = []
+
+    # Related objects (loaded via joinedload)
+    facility: Optional[FacilityResponse] = None
+    mentor: Optional[UserResponse] = None
+    approver: Optional[UserResponse] = None
 
     class Config:
         from_attributes = True

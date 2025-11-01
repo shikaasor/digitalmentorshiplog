@@ -17,7 +17,8 @@ from app.models import (
     MentorshipLog, SkillsTransfer, FollowUp, User, UserRole, LogStatus
 )
 from app.schemas import (
-    MentorshipLogCreate, MentorshipLogUpdate, MentorshipLogResponse
+    MentorshipLogCreate, MentorshipLogUpdate, MentorshipLogResponse,
+    PaginatedResponse
 )
 from app.dependencies import get_current_user, require_role
 
@@ -25,7 +26,7 @@ from app.dependencies import get_current_user, require_role
 router = APIRouter(prefix="/api/mentorship-logs", tags=["mentorship-logs"])
 
 
-@router.get("", response_model=List[MentorshipLogResponse])
+@router.get("", response_model=PaginatedResponse[MentorshipLogResponse])
 def list_mentorship_logs(
     facility_id: Optional[UUID] = Query(None, description="Filter by facility"),
     mentor_id: Optional[UUID] = Query(None, description="Filter by mentor"),
@@ -50,7 +51,19 @@ def list_mentorship_logs(
     - Mentors can only see their own logs
     - Supervisors and admins can see all logs
     """
+    from sqlalchemy.orm import joinedload
+
     query = db.query(MentorshipLog)
+
+    # Eager load relationships for better performance
+    query = query.options(
+        joinedload(MentorshipLog.facility),
+        joinedload(MentorshipLog.mentor),
+        joinedload(MentorshipLog.approver),
+        joinedload(MentorshipLog.skills_transfers),
+        joinedload(MentorshipLog.follow_ups),
+        joinedload(MentorshipLog.attachments)
+    )
 
     # Apply permission-based filter
     if current_user.role == UserRole.mentor:
@@ -72,6 +85,9 @@ def list_mentorship_logs(
     if visit_date_to:
         query = query.filter(MentorshipLog.visit_date <= visit_date_to)
 
+    # Get total count before pagination
+    total = query.count()
+
     # Apply pagination and ordering (most recent first)
     logs = (
         query
@@ -81,7 +97,12 @@ def list_mentorship_logs(
         .all()
     )
 
-    return logs
+    return PaginatedResponse(
+        items=logs,
+        total=total,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/{log_id}", response_model=MentorshipLogResponse)
@@ -102,7 +123,19 @@ def get_mentorship_log(
     - Mentors can only view their own logs
     - Supervisors and admins can view all logs
     """
-    log = db.query(MentorshipLog).filter(MentorshipLog.id == log_id).first()
+    from sqlalchemy.orm import joinedload
+
+    log = db.query(MentorshipLog)\
+        .options(
+            joinedload(MentorshipLog.facility),
+            joinedload(MentorshipLog.mentor),
+            joinedload(MentorshipLog.approver),
+            joinedload(MentorshipLog.skills_transfers),
+            joinedload(MentorshipLog.follow_ups),
+            joinedload(MentorshipLog.attachments)
+        )\
+        .filter(MentorshipLog.id == log_id)\
+        .first()
 
     if not log:
         raise HTTPException(
@@ -376,6 +409,56 @@ def return_log_to_draft(
     # Update status
     log.status = LogStatus.draft
     log.submitted_at = None
+
+    db.commit()
+    db.refresh(log)
+
+    return log
+
+
+@router.post("/{log_id}/reject", response_model=MentorshipLogResponse)
+def reject_mentorship_log(
+    log_id: UUID,
+    reason: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(UserRole.supervisor, UserRole.admin)),
+):
+    """
+    Reject a submitted mentorship log (Supervisor/Admin only).
+
+    Changes status from "submitted" to "draft" and stores the rejection reason.
+    This allows the mentor to see why their log was rejected and make corrections.
+
+    Permissions:
+    - Only supervisors and admins can reject logs
+    """
+    log = db.query(MentorshipLog).filter(MentorshipLog.id == log_id).first()
+
+    if not log:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Mentorship log not found"
+        )
+
+    # Check current status
+    if log.status != LogStatus.submitted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot reject {log.status.value} log. Only submitted logs can be rejected."
+        )
+
+    # Validate reason is provided
+    if not reason or not reason.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Rejection reason is required"
+        )
+
+    # Update status and store rejection info
+    log.status = LogStatus.draft
+    log.rejected_at = datetime.utcnow()
+    log.rejection_reason = reason
+    log.submitted_at = None  # Clear submission timestamp
 
     db.commit()
     db.refresh(log)

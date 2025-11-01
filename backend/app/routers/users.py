@@ -13,7 +13,7 @@ from sqlalchemy import or_
 
 from app.database import get_db
 from app.models import User, UserRole
-from app.schemas import UserCreate, UserUpdate, UserResponse
+from app.schemas import UserCreate, UserUpdate, UserResponse, PaginatedResponse
 from app.dependencies import get_current_user, require_role
 from app.utils.security import hash_password
 
@@ -63,7 +63,7 @@ def check_user_update_permissions(current_user: User, target_user: User, update_
         return
 
 
-@router.get("", response_model=List[UserResponse])
+@router.get("", response_model=PaginatedResponse[UserResponse])
 def list_users(
     role: Optional[UserRole] = Query(None, description="Filter by user role"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
@@ -102,6 +102,9 @@ def list_users(
             )
         )
 
+    # Get total count before pagination
+    total = query.count()
+
     # Apply pagination and ordering
     users = (
         query
@@ -111,7 +114,12 @@ def list_users(
         .all()
     )
 
-    return users
+    return PaginatedResponse(
+        items=users,
+        total=total,
+        skip=skip,
+        limit=limit
+    )
 
 
 @router.get("/{user_id}", response_model=UserResponse)
