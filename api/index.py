@@ -10,11 +10,6 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from backend.app.main import app
-from mangum import Mangum
 
-# Create the handler for Vercel
-handler = Mangum(app, lifespan="off")
-
-# Export the handler
-def lambda_handler(event, context):
-    return handler(event, context)
+# Export for Vercel
+handler = app
