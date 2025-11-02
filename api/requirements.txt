@@ -92,7 +92,7 @@ mccabe==0.7.0
     # via flake8
 multidict==6.7.0
 #   Servers
-mangum==19.0.0
+mangum==0.19.0
     # via yarl
 mypy-extensions==1.1.0
     # via black
