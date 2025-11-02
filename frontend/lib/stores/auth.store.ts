@@ -1,12 +1,14 @@
 /**
  * Authentication Store
  *
- * Zustand store for auth state management
+ * Zustand store for auth state management with robust error handling
  */
 
 import { create } from 'zustand'
 import { User, LoginRequest, RegisterRequest } from '@/types'
 import { authService } from '../api/auth.service'
+import { toast } from './toast.store'
+import { handleApiError } from '../api/client'
 
 interface AuthState {
   user: User | null
@@ -47,9 +49,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('user', JSON.stringify(user))
 
       set({ user, token: tokenData.access_token, isLoading: false })
+
+      // Show success toast
+      toast.success('Welcome back!', `Logged in as ${user.name}`)
     } catch (error: any) {
-      const errorMessage = error.message || 'Login failed'
+      const errorMessage = handleApiError(error)
       set({ error: errorMessage, isLoading: false })
+
+      // Show error toast
+      toast.error('Login Failed', errorMessage)
       throw error
     }
   },
@@ -62,6 +70,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const user = await authService.register(data)
 
+      // Show success toast
+      toast.success('Registration Successful!', 'Logging you in...')
+
       // After registration, automatically login
       await useAuthStore.getState().login({
         email: data.email,
@@ -70,8 +81,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       set({ isLoading: false })
     } catch (error: any) {
-      const errorMessage = error.message || 'Registration failed'
+      const errorMessage = handleApiError(error)
       set({ error: errorMessage, isLoading: false })
+
+      // Show error toast
+      toast.error('Registration Failed', errorMessage)
       throw error
     }
   },
