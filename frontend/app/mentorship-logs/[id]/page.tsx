@@ -93,9 +93,10 @@ export default function ViewMentorshipLogPage() {
     })
   }
 
-  const canEdit = log && (log.status === 'draft' || log.status === 'rejected')
-  const canApprove = log && log.status === 'submitted' && canApproveLogs
-  const canReject = log && log.status === 'submitted' && canRejectLogs
+  // A log can be edited if it's in draft status (includes rejected logs which are set back to draft)
+  const canEdit = log && log.status === LogStatus.DRAFT
+  const canApprove = log && log.status === LogStatus.SUBMITTED && canApproveLogs
+  const canReject = log && log.status === LogStatus.SUBMITTED && canRejectLogs
 
   if (loading) {
     return (
