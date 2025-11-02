@@ -9,7 +9,7 @@ from app.config import settings
 engine = create_engine(
     settings.DATABASE_URL,
     poolclass=StaticPool,
-    connect_args={"check_same_thread": False}
+    connect_args={"check_same_thread": False},
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
