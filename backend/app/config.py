@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_HOURS: int = 24
 
     # CORS
-    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8000","https://mentorlog.vercel.app"]
+    ALLOWED_ORIGINS: Union[List[str], str] = ["http://localhost:3000", "http://localhost:8000","https://digitalmentorshiplog.vercel.app"]
     ALLOWED_HOSTS: Union[List[str], str] = ["*"]
 
     @field_validator('ALLOWED_ORIGINS', 'ALLOWED_HOSTS', mode='before')
