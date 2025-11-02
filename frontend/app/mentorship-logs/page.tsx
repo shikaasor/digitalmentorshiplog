@@ -51,18 +51,27 @@ export default function MentorshipLogsPage() {
     }
   }
 
-  const getStatusBadgeColor = (status: LogStatus) => {
-    switch (status) {
-      case 'draft':
-        return 'bg-gray-100 text-gray-700'
-      case 'submitted':
-        return 'bg-yellow-100 text-yellow-700'
-      case 'approved':
-        return 'bg-green-100 text-green-700'
-      case 'rejected':
-        return 'bg-red-100 text-red-700'
+  const getStatusDisplay = (log: MentorshipLog) => {
+    // If log has been rejected, show "Returned" status
+    if (log.rejected_at && log.status === LogStatus.DRAFT) {
+      return {
+        text: 'Returned',
+        color: 'bg-red-100 text-red-700',
+      }
+    }
+
+    // Otherwise show normal status
+    switch (log.status) {
+      case LogStatus.DRAFT:
+        return { text: 'Draft', color: 'bg-gray-100 text-gray-700' }
+      case LogStatus.SUBMITTED:
+        return { text: 'Submitted', color: 'bg-yellow-100 text-yellow-700' }
+      case LogStatus.APPROVED:
+        return { text: 'Approved', color: 'bg-green-100 text-green-700' }
+      case LogStatus.COMPLETED:
+        return { text: 'Completed', color: 'bg-blue-100 text-blue-700' }
       default:
-        return 'bg-gray-100 text-gray-700'
+        return { text: 'Unknown', color: 'bg-gray-100 text-gray-700' }
     }
   }
 
@@ -237,12 +246,17 @@ export default function MentorshipLogsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(
-                            log.status
-                          )}`}
+                          className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            getStatusDisplay(log).color
+                          }`}
                         >
-                          {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
+                          {getStatusDisplay(log).text}
                         </span>
+                        {log.rejected_at && log.status === LogStatus.DRAFT && (
+                          <div className="mt-1 text-xs text-red-600">
+                            Needs revision
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {log.duration_hours || 0}h {log.duration_minutes || 0}m

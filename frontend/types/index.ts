@@ -18,6 +18,7 @@ export enum LogStatus {
   DRAFT = 'draft',
   SUBMITTED = 'submitted',
   APPROVED = 'approved',
+  COMPLETED = 'completed'
 }
 
 export enum FollowUpStatus {

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
+import RejectionAlert from '@/components/logs/RejectionAlert'
 import { mentorshipLogsService } from '@/lib/api/mentorship-logs.service'
 import { MentorshipLog, LogStatus } from '@/types'
 import { usePermissions } from '@/lib/hooks/usePermissions'
@@ -217,6 +218,14 @@ export default function ViewMentorshipLogPage() {
             {log.status.charAt(0).toUpperCase() + log.status.slice(1)}
           </span>
         </div>
+
+        {/* Rejection Alert - Show if log was rejected */}
+        {log.rejected_at && (
+          <RejectionAlert
+            rejectedAt={log.rejected_at}
+            rejectionReason={log.rejection_reason}
+          />
+        )}
 
         {/* Visit Information */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
