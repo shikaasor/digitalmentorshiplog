@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { UserRole } from '@/types'
@@ -91,7 +92,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out ${
@@ -100,10 +101,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
-          <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg">
+            <Image
+              src="/images/icon.png"
+              alt="Mentorship Log"
+              width={40}
+              height={40}
+              className="w-10 h-10"
+            />
           </div>
           <div>
             <h1 className="text-sm font-bold text-gray-900">Mentorship Log</h1>

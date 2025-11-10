@@ -18,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
+        <div className="relative z-10">
+          {children}
+        </div>
         <ToastContainer />
       </body>
     </html>

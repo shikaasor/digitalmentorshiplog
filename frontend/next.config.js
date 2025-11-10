@@ -2,7 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['vbgrymtdnrttttswqmxg.supabase.co'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'vbgrymtdnrttttswqmxg.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,

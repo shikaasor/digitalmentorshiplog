@@ -1,4 +1,5 @@
 import React from 'react'; // Switched to generic React import for compatibility
+import Image from 'next/image';
 
 export default function Home() {
   // Define color palette based on Tailwind defaults for Navy, Blue, and White
@@ -6,7 +7,7 @@ export default function Home() {
   const deepNavyText = 'text-gray-900'; // For contrast and professionalism
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen">
       <div className="relative isolate pt-14 lg:pt-0">
         
         {/* Hero Section Container */}
@@ -14,10 +15,14 @@ export default function Home() {
           <div className="max-w-4xl mx-auto text-center">
             
             {/* Logo/Icon placeholder for visual interest */}
-            <div className="mx-auto w-12 h-12 bg-blue-700/10 rounded-xl flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            <div className="mx-auto w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                <Image
+                  src="/images/icon.png"
+                  alt="Digital Mentorship Log"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12"
+                />
             </div>
 
             {/* Title */}

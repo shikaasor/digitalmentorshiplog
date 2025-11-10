@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
 import RejectionAlert from '@/components/logs/RejectionAlert'
@@ -237,7 +238,16 @@ export default function ViewMentorshipLogPage() {
               <label className="block text-sm font-medium text-gray-500 mb-1">
                 Facility Name
               </label>
-              <p className="text-gray-900">{log.facility?.name || 'N/A'}</p>
+              {log.facility ? (
+                <Link
+                  href={`/facilities/${log.facility_id}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                >
+                  {log.facility.name}
+                </Link>
+              ) : (
+                <p className="text-gray-900">N/A</p>
+              )}
             </div>
 
             <div>
@@ -636,19 +646,13 @@ export default function ViewMentorshipLogPage() {
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                     >
                       <div className="flex items-center gap-3">
-                        <svg
-                          className="w-8 h-8 text-blue-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
+                        <Image
+                          src="/images/icon.png"
+                          alt="File"
+                          width={32}
+                          height={32}
+                          className="w-8 h-8"
+                        />
                         <div>
                           <p className="text-sm font-medium text-gray-900">
                             {attachment.file_name}

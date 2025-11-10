@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
@@ -238,8 +239,18 @@ export default function MentorshipLogsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(log.visit_date)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {log.facility?.name || 'N/A'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {log.facility ? (
+                          <Link
+                            href={`/facilities/${log.facility_id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                          >
+                            {log.facility.name}
+                          </Link>
+                        ) : (
+                          <span className="text-gray-900">N/A</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {log.mentor?.name || 'N/A'}
@@ -316,19 +327,13 @@ export default function MentorshipLogsPage() {
         {/* Empty State */}
         {!loading && logs.length === 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+            <Image
+              src="/images/icon.png"
+              alt="No logs"
+              width={48}
+              height={48}
+              className="mx-auto h-12 w-12 opacity-40"
+            />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No logs found</h3>
             <p className="mt-1 text-sm text-gray-500">
               Get started by creating a new mentorship log.

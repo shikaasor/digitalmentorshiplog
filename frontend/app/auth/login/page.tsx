@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -39,24 +40,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Logo/Brand Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
-            <svg
-              className="w-10 h-10 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4">
+            <Image
+              src="/images/icon.png"
+              alt="Digital Mentorship Log"
+              width={64}
+              height={64}
+              className="w-16 h-16"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Digital Mentorship Log
@@ -232,7 +227,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
+          {/* Divider
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
@@ -244,7 +239,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Register Link */}
+           Register Link
           <div className="text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
@@ -255,12 +250,12 @@ export default function LoginPage() {
                 Create an account
               </Link>
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Footer */}
         <p className="text-center text-sm text-gray-500 mt-8">
-          © 2025 Digital Mentorship Log. All rights reserved.
+          © 2025 DHI - GGHN. All rights reserved.
         </p>
       </div>
     </div>
