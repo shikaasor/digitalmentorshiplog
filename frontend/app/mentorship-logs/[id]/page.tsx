@@ -9,13 +9,15 @@ import DashboardLayout from '@/components/layouts/DashboardLayout'
 import RejectionAlert from '@/components/logs/RejectionAlert'
 import CommentsSection from '@/components/logs/CommentsSection'
 import { mentorshipLogsService } from '@/lib/api/mentorship-logs.service'
-import { MentorshipLog, LogStatus } from '@/types'
+import { MentorshipLog, LogStatus, UserRole } from '@/types'
 import { usePermissions } from '@/lib/hooks/usePermissions'
+import { useAuthStore } from '@/lib/stores/auth.store'
 
 export default function ViewMentorshipLogPage() {
   const router = useRouter()
   const params = useParams()
   const { canApproveLogs, canRejectLogs } = usePermissions()
+  const { user: currentUser } = useAuthStore()
   const [log, setLog] = useState<MentorshipLog | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -96,8 +98,28 @@ export default function ViewMentorshipLogPage() {
     })
   }
 
-  // A log can be edited if it's in draft status (includes rejected logs which are set back to draft)
-  const canEdit = log && log.status === LogStatus.DRAFT
+  // Check if current user is the log creator
+  const isLogCreator = log && currentUser && log.mentor_id === currentUser.id
+  const isAdmin = currentUser?.role === UserRole.ADMIN
+
+  // Debug logging
+  if (log && currentUser) {
+    console.log('Authorization Debug:', {
+      logMentorId: log.mentor_id,
+      currentUserId: currentUser.id,
+      currentUserRole: currentUser.role,
+      isLogCreator,
+      isAdmin,
+      logStatus: log.status
+    })
+  }
+
+  // A log can be edited if it's in draft status AND user is the creator (or admin)
+  const canEdit = log && log.status === LogStatus.DRAFT && (isLogCreator || isAdmin)
+
+  // A log can be deleted if user is the creator (and it's draft) OR user is admin
+  const canDelete = log && ((isLogCreator && log.status === LogStatus.DRAFT) || isAdmin)
+
   const canApprove = log && log.status === LogStatus.SUBMITTED && canApproveLogs
   const canReject = log && log.status === LogStatus.SUBMITTED && canRejectLogs
 
@@ -201,12 +223,14 @@ export default function ViewMentorshipLogPage() {
                 </button>
               </>
             )}
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 border border-red-600 text-red-600 font-medium rounded-lg hover:bg-red-50 transition-colors"
-            >
-              Delete
-            </button>
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 border border-red-600 text-red-600 font-medium rounded-lg hover:bg-red-50 transition-colors"
+              >
+                Delete
+              </button>
+            )}
           </div>
         </div>
 

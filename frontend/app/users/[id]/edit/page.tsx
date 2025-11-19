@@ -7,7 +7,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import DashboardLayout from '@/components/layouts/DashboardLayout'
 import { usersService } from '@/lib/api/users.service'
 import { UserUpdate, User, UserRole } from '@/types'
-import { THEMATIC_AREAS } from '@/lib/constants/thematic-areas'
+import { SPECIALIZATION_AREAS } from '@/lib/constants/thematic-areas'
 
 export default function EditUserPage() {
   const router = useRouter()
@@ -287,7 +287,7 @@ export default function EditUserPage() {
                 Select thematic areas where this user has specialized expertise. Specialists will receive notifications for logs in their areas.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {THEMATIC_AREAS.map(area => (
+                {SPECIALIZATION_AREAS.map(area => (
                   <label
                     key={area}
                     className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"

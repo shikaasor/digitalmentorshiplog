@@ -22,7 +22,8 @@ from app.schemas import (
     PaginatedResponse
 )
 from app.dependencies import (
-    get_current_user, require_role, get_visible_logs_query, can_approve_log
+    get_current_user, require_role, get_visible_logs_query, can_approve_log,
+    can_view_as_specialist
 )
 
 
@@ -126,6 +127,7 @@ def get_mentorship_log(
     Permissions:
     - Mentors can only view their own logs
     - Supervisors and admins can view all logs
+    - Specialists can view submitted/approved logs matching their thematic areas
     """
     from sqlalchemy.orm import joinedload
 
@@ -149,13 +151,24 @@ def get_mentorship_log(
         )
 
     # Check permissions
-    if current_user.role == UserRole.mentor and log.mentor_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view your own logs"
-        )
+    # Admins and supervisors can view all logs
+    if current_user.role in [UserRole.admin, UserRole.supervisor]:
+        return log
 
-    return log
+    # Mentors can view their own logs
+    if current_user.role == UserRole.mentor and log.mentor_id == current_user.id:
+        return log
+
+    # Specialists can view submitted/approved logs matching their thematic areas
+    if log.status in [LogStatus.submitted, LogStatus.approved]:
+        if can_view_as_specialist(log, current_user, db):
+            return log
+
+    # If none of the above conditions are met, deny access
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You don't have permission to view this log"
+    )
 
 
 @router.post("", response_model=MentorshipLogResponse, status_code=status.HTTP_201_CREATED)

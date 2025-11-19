@@ -10,6 +10,7 @@ import { mentorshipLogsService } from '@/lib/api/mentorship-logs.service'
 import { attachmentsService } from '@/lib/api/attachments.service'
 import { facilitiesService } from '@/lib/api/facilities.service'
 import { MentorshipLogUpdate, Facility, MenteesPresent, SkillsTransfer, FollowUpNested, Attachment } from '@/types'
+import { THEMATIC_AREAS } from '@/lib/constants/thematic-areas'
 
 // Define checkbox options matching ACE2 PDF
 const ACTIVITIES_OPTIONS = [
@@ -22,17 +23,8 @@ const ACTIVITIES_OPTIONS = [
   'Meeting facilitation',
 ]
 
-const THEMATIC_AREAS_OPTIONS = [
-  'General HIV care and treatment',
-  'Advanced HIV disease (AHD)',
-  'Pediatric HIV management',
-  'PMTCT',
-  'TB/HIV',
-  'Laboratory services',
-  'Pharmacy/supply chain',
-  'Data quality and use',
-  'Quality improvement',
-]
+// Use backend constants for thematic areas (includes "Other" option)
+const THEMATIC_AREAS_OPTIONS = THEMATIC_AREAS
 
 const ATTACHMENT_TYPES_OPTIONS = [
   'Photos (with consent)',
