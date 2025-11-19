@@ -1,17 +1,17 @@
 /**
  * Notifications Store
  *
- * Zustand store for managing specialist notifications
+ * Zustand store for managing all types of notifications (comments, approvals, rejections, specialist logs)
  */
 
 import { create } from 'zustand'
-import { SpecialistNotification } from '@/types'
+import { Notification } from '@/types'
 import { notificationsService } from '../api/notifications.service'
 import { toast } from './toast.store'
 import { handleApiError } from '../api/client'
 
 interface NotificationsState {
-  notifications: SpecialistNotification[]
+  notifications: Notification[]
   unreadCount: number
   isLoading: boolean
   error: string | null

@@ -1,20 +1,20 @@
 /**
  * Notifications API Service
  *
- * Handles specialist notifications for mentorship logs
+ * Handles all types of notifications: comments, approvals, rejections, specialist logs
  */
 
 import { apiClient } from './client'
-import { SpecialistNotification, MarkNotificationReadRequest } from '@/types'
+import { Notification, MarkNotificationReadRequest } from '@/types'
 
 export const notificationsService = {
   /**
-   * Get notifications for the current user
+   * Get all notifications for the current user (unified format)
    * @param unreadOnly - If true, only return unread notifications
    */
-  async getNotifications(unreadOnly: boolean = false): Promise<SpecialistNotification[]> {
+  async getNotifications(unreadOnly: boolean = false): Promise<Notification[]> {
     const params = unreadOnly ? { unread_only: true } : {}
-    const response = await apiClient.get<SpecialistNotification[]>(
+    const response = await apiClient.get<Notification[]>(
       '/api/notifications/',
       { params }
     )

@@ -15,7 +15,7 @@ from sqlalchemy import and_, or_
 from app.database import get_db
 from app.models import (
     MentorshipLog, SkillsTransfer, FollowUp, User, UserRole, LogStatus,
-    UserSpecialization, SpecialistNotification, LogComment
+    UserSpecialization, SpecialistNotification, LogComment, Notification, NotificationType
 )
 from app.schemas import (
     MentorshipLogCreate, MentorshipLogUpdate, MentorshipLogResponse,
@@ -421,6 +421,23 @@ def approve_mentorship_log(
     log.approved_at = datetime.utcnow()
     log.approved_by = current_user.id
 
+    # Create approval notification for the mentor
+    if log.mentor_id != current_user.id:  # Don't notify yourself
+        approval_notification = Notification(
+            user_id=log.mentor_id,
+            notification_type=NotificationType.approval,
+            title="Log Approved",
+            message=f"Your mentorship log for {log.facility.name if log.facility else 'a facility'} has been approved by {current_user.name}",
+            related_log_id=log_id,
+            extra_data={
+                "approver_name": current_user.name,
+                "approver_role": current_user.role.value,
+                "facility_name": log.facility.name if log.facility else None,
+                "visit_date": log.visit_date.isoformat() if log.visit_date else None
+            }
+        )
+        db.add(approval_notification)
+
     db.commit()
     db.refresh(log)
 
@@ -510,6 +527,24 @@ def reject_mentorship_log(
     log.rejected_at = datetime.utcnow()
     log.rejection_reason = reason
     log.submitted_at = None  # Clear submission timestamp
+
+    # Create rejection notification for the mentor
+    if log.mentor_id != current_user.id:  # Don't notify yourself
+        rejection_notification = Notification(
+            user_id=log.mentor_id,
+            notification_type=NotificationType.rejection,
+            title="Log Returned for Revision",
+            message=f"Your mentorship log for {log.facility.name if log.facility else 'a facility'} has been returned by {current_user.name}. Reason: {reason}",
+            related_log_id=log_id,
+            extra_data={
+                "rejector_name": current_user.name,
+                "rejector_role": current_user.role.value,
+                "facility_name": log.facility.name if log.facility else None,
+                "visit_date": log.visit_date.isoformat() if log.visit_date else None,
+                "rejection_reason": reason
+            }
+        )
+        db.add(rejection_notification)
 
     db.commit()
     db.refresh(log)

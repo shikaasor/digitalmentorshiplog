@@ -377,5 +377,23 @@ class MarkNotificationReadRequest(BaseModel):
     notification_ids: List[UUID]
 
 
+# Unified Notification Schema (for comments, approvals, rejections)
+class NotificationResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    notification_type: str  # 'comment', 'approval', 'rejection', 'specialist_log'
+    title: str
+    message: str
+    related_log_id: Optional[UUID] = None
+    related_comment_id: Optional[UUID] = None
+    extra_data: Optional[dict] = None
+    is_read: bool
+    created_at: datetime
+    read_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 # Rebuild models to resolve forward references
 MentorshipLogResponse.model_rebuild()

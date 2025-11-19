@@ -28,6 +28,14 @@ class FollowUpStatus(str, enum.Enum):
     completed = "completed"
 
 
+class NotificationType(str, enum.Enum):
+    """Types of notifications in the system"""
+    specialist_log = "specialist_log"  # Specialist notified about log in their area
+    comment = "comment"  # Someone commented on your log
+    approval = "approval"  # Your log was approved
+    rejection = "rejection"  # Your log was rejected
+
+
 # Models
 class User(Base):
     __tablename__ = "users"
@@ -284,3 +292,34 @@ class SpecialistNotification(Base):
     __table_args__ = (
         UniqueConstraint('mentorship_log_id', 'specialist_id', 'thematic_area', name='uq_specialist_notification'),
     )
+
+
+class Notification(Base):
+    """
+    Unified notification system for comments, approvals, and rejections.
+    Replaces/augments the specialist notification system.
+    """
+    __tablename__ = "notifications"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    notification_type = Column(Enum(NotificationType), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+
+    # Related entities
+    related_log_id = Column(UUID(as_uuid=True), ForeignKey("mentorship_logs.id"), nullable=True, index=True)
+    related_comment_id = Column(UUID(as_uuid=True), ForeignKey("log_comments.id"), nullable=True, index=True)
+
+    # Extra data for flexible storage (facility name, mentor name, etc.)
+    extra_data = Column(JSON, nullable=True)
+
+    # Read tracking
+    is_read = Column(Boolean, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    read_at = Column(DateTime(timezone=True))
+
+    # Relationships
+    user = relationship("User")
+    mentorship_log = relationship("MentorshipLog")
+    comment = relationship("LogComment")

@@ -405,6 +405,31 @@ export interface ApiValidationError {
 // Notification Types
 // ============================================================================
 
+export enum NotificationType {
+  COMMENT = 'comment',
+  APPROVAL = 'approval',
+  REJECTION = 'rejection',
+  SPECIALIST_LOG = 'specialist_log',
+}
+
+// Unified notification interface (replaces SpecialistNotification)
+export interface Notification {
+  id: string
+  user_id: string
+  notification_type: NotificationType | string
+  title: string
+  message: string
+  related_log_id?: string
+  related_comment_id?: string
+  extra_data?: {
+    [key: string]: any
+  }
+  is_read: boolean
+  created_at: string
+  read_at?: string
+}
+
+// Legacy specialist notification (kept for backward compatibility)
 export interface SpecialistNotification {
   id: string
   mentorship_log_id: string

@@ -12,8 +12,9 @@ from uuid import UUID
 
 from app.database import get_db
 from app.dependencies import get_current_user, can_view_as_specialist
-from app.models import User, MentorshipLog, LogComment, UserRole
+from app.models import User, MentorshipLog, LogComment, UserRole, Notification, NotificationType
 from app.schemas import LogCommentCreate, LogCommentResponse, LogCommentUpdate
+from datetime import datetime
 
 router = APIRouter(prefix="/api/mentorship-logs", tags=["comments"])
 
@@ -148,6 +149,42 @@ async def create_log_comment(
     )
 
     db.add(new_comment)
+    db.flush()  # Get the comment ID before creating notifications
+
+    # Create notifications for comment
+    users_to_notify = set()
+
+    # 1. Notify log owner (mentor) if they're not the commenter
+    if log.mentor_id != current_user.id:
+        users_to_notify.add(log.mentor_id)
+
+    # 2. Notify other commenters on this log (to keep conversation going)
+    other_commenters = db.query(LogComment.user_id).filter(
+        LogComment.mentorship_log_id == log_id,
+        LogComment.user_id != current_user.id  # Don't notify the current commenter
+    ).distinct().all()
+
+    for (user_id,) in other_commenters:
+        users_to_notify.add(user_id)
+
+    # Create notification for each user
+    for user_id in users_to_notify:
+        notification = Notification(
+            user_id=user_id,
+            notification_type=NotificationType.comment,
+            title=f"New comment from {current_user.name}",
+            message=f"{current_user.name} commented on your log: \"{comment_data.comment_text[:100]}...\"" if len(comment_data.comment_text) > 100 else f"{current_user.name} commented on your log: \"{comment_data.comment_text}\"",
+            related_log_id=log_id,
+            related_comment_id=new_comment.id,
+            extra_data={
+                "commenter_name": current_user.name,
+                "commenter_role": current_user.role.value,
+                "facility_name": log.facility.name if log.facility else None,
+                "is_specialist_comment": is_specialist or comment_data.is_specialist_comment
+            }
+        )
+        db.add(notification)
+
     db.commit()
     db.refresh(new_comment)
 
